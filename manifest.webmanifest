@@ -1,0 +1,23 @@
+{
+  "name": "Knockout Isles",
+  "short_name": "Knockout Isles",
+  "start_url": ".",
+  "scope": ".",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#0f1726",
+  "theme_color": "#0f1726",
+  "icons": [
+    {
+      "src": "ki-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "ki-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
