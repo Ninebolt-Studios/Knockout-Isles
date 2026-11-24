@@ -28,8 +28,16 @@
 - ⚙️ Settings (sound, camera, touch button size, graphics, name tags, screen shake) and 🎁 gift codes
 - 📲 Installs as an app, works offline against bots
 
+## 🗂️ How the code is organised
+- `index.html`: just the page layout (menus, HUD, buttons). It loads everything else
+- `js/game.js`: the whole game in JavaScript (three.js 3D engine)
+- `css/style.css`: all the styling
+- `sw.js`: offline support so the game works without internet
+- `tools/release.py`: Python release helper. It checks the scripts and bumps the version stamps so players always get the newest files (`python3 tools/release.py`)
+
 ## Updates
 | Version | What's new |
 |---|---|
+| **v2.1** | **Real JavaScript project:** the game code now lives in `js/game.js` and the styling in `css/style.css` instead of being packed into one HTML page, plus a Python release tool (`tools/release.py`). Same game, it just loads from proper files |
 | **v2** | **Faster!** (about 40% quicker movement, snappier dashes and punches, rounds about 30% shorter), a **2-minute tutorial** with a training dummy (◎ 250 the first time), **hold at max SMASH power** as long as you like, **new character models** (shiny bean bodies with outlines, boxing gloves, sneakers that walk, blinking eyes, angry eyebrows when charging, rosy cheeks, an 'O' mouth when hit), a ☁️ **Sign in** button at the top of the menu, and How to play in the pause menu |
 | **v1** | First release: Last Isle Standing + KO Frenzy, 3 islands, up to 20 players online or vs bots, crates, hats, accounts, app |
