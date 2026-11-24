@@ -6,6 +6,7 @@ self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Pr
 self.addEventListener('fetch', e => {
   const req = e.request; if (req.method !== 'GET') return;
   const url = new URL(req.url), same = url.origin === self.location.origin;
+  if (same && url.searchParams.has('c')) return; // the game's own "is there a newer version?" check always goes to the network
   if (same && (req.mode === 'navigate' || url.pathname.endsWith('/') || url.pathname.endsWith('/index.html'))) {
     const cached = () => caches.open(CACHE).then(c => c.match('index.html'));
     e.respondWith(new Promise(resolve => { let done = false; const fin = r => { if (!done && r) { done = true; resolve(r); } };

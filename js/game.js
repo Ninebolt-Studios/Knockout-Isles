@@ -452,7 +452,7 @@ function showResults(res) {
   $('againBtn').textContent = NET.role === 'client' ? '↻ BACK TO ROOM' : NET.role === 'host' ? '↻ BACK TO ROOM' : '↻ AGAIN';
   $('resOv').classList.remove('hide'); $('big').innerHTML = ''; tone(win ? 660 : 330, 0.3, 'triangle', 0.12); if (win) setTimeout(() => tone(880, 0.4, 'triangle', 0.12), 160);
 }
-function quitToMenu() { if (NET.role !== 'off') netLeave(); clearMatchVis(); GM = null; state = 'menu'; hideAllOv(); $('hud').classList.add('hide'); $('touch').classList.add('hide'); $('menu').classList.remove('hide'); menuScene(); renderMenu(); }
+function quitToMenu() { setTimeout(() => { try { window.__nbUpd && window.__nbUpd(); } catch (e) {} }, 1200); if (NET.role !== 'off') netLeave(); clearMatchVis(); GM = null; state = 'menu'; hideAllOv(); $('hud').classList.add('hide'); $('touch').classList.add('hide'); $('menu').classList.remove('hide'); menuScene(); renderMenu(); }
 function hideAllOv() { for (const id of ['resOv', 'pauseOv', 'lobbyOv', 'howOv']) $(id).classList.add('hide'); $('tutBox').classList.add('hide'); }
 
 /* ---------- visuals ---------- */
@@ -858,6 +858,8 @@ const errText = e => ERRS[e && e.code] || ('Something went wrong' + (e && e.code
   $('appBtn').onclick = () => { if (installEv) { installEv.prompt(); installEv = null; $('appBtn').classList.add('hide'); } else location.href = 'KnockoutIsles.mobileconfig'; }; }
 
 /* ---------- boot ---------- */
+window.__nbBusy = () => state === 'play' || state === 'paused' || NET.role !== 'off';
+try { if (sessionStorage.getItem('ki-upd')) { sessionStorage.removeItem('ki-upd'); setTimeout(() => { try { ($('netMsg').textContent = '✨ Updated to the newest version!'); } catch (e) {} }, 2600); } } catch (e) {}
 renderMenu(); fitTouch();
 setTimeout(() => { menuScene(); loop(); requestAnimationFrame(() => requestAnimationFrame(() => { try { window.__splashReady && window.__splashReady(); } catch (e) {} })); }, 80);
 window.__ki = { startTutorial, TUT, get GM() { return GM; }, get state() { return state; }, get NET() { return NET; }, SAVE, startMatch, rosterOffline, hostStep: dt => hostStep(dt), botThink, tileAt, get ISLE() { return ISLE; }, K, joinRoom, hostRoom, startOnline };
