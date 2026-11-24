@@ -12,9 +12,9 @@
 <link rel="icon" href="ki-192.png">
 <link rel="apple-touch-icon" href="ki-touch.png">
 <link rel="manifest" href="manifest.webmanifest">
-<script>/* auto-update: when a new version is published, reload into it (never in the middle of a race / match / room) */(function(){var B='20261124171452',want='';function go(){if(!want||(window.__nbBusy&&window.__nbBusy()))return;if(sessionStorage.getItem('ki-rl')===want)return;sessionStorage.setItem('ki-rl',want);sessionStorage.setItem('ki-upd','1');location.replace(location.pathname+'?v='+want+location.hash);}function ck(){try{fetch(location.pathname+'?c='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){var m=t.match(/var B='(\d+)'/);if(m&&m[1]!==B){want=m[1];go();}}).catch(function(){});}catch(e){}}ck();document.addEventListener('visibilitychange',function(){if(!document.hidden)ck();});window.addEventListener('pageshow',function(e){if(e.persisted)ck();});setInterval(ck,600000);window.__nbUpd=go;})();</script>
+<script>/* auto-update: when a new version is published, reload into it (never in the middle of a race / match / room) */(function(){var B='20261124192121',want='';function go(){if(!want||(window.__nbBusy&&window.__nbBusy()))return;if(sessionStorage.getItem('ki-rl')===want)return;sessionStorage.setItem('ki-rl',want);sessionStorage.setItem('ki-upd','1');location.replace(location.pathname+'?v='+want+location.hash);}function ck(){try{fetch(location.pathname+'?c='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){var m=t.match(/var B='(\d+)'/);if(m&&m[1]!==B){want=m[1];go();}}).catch(function(){});}catch(e){}}ck();document.addEventListener('visibilitychange',function(){if(!document.hidden)ck();});window.addEventListener('pageshow',function(e){if(e.persisted)ck();});setInterval(ck,600000);window.__nbUpd=go;})();</script>
 
-<link rel="stylesheet" href="css/style.css?v=20261124171452">
+<link rel="stylesheet" href="css/style.css?v=20261124192121">
 </head>
 <body>
 <canvas id="view"></canvas>
@@ -94,7 +94,7 @@ if(img.complete&&img.naturalWidth)show();else{img.addEventListener('load',show);
     <div><i>📈</i><div><b>Damage %</b><span class="best">The higher your %, the further you fly. Watch everyone's number!</span></div></div>
     <div><i>🎁</i><div><b>Crates</b><span class="best">💣 bomb (punch to throw) · 🍄 mega size · 👟 speed · 🛡️ shield · 🔨 hammer (3 smashes)</span></div></div>
     <div><i>⚠️</i><div><b>The island crumbles</b><span class="best">Red tiles are about to fall. Move to the middle!</span></div></div>
-  </div><div class="best" id="howCtl" style="margin-bottom:12px">Move: WASD / arrows · Controller: stick, Ⓐ punch, Ⓑ dash · Touch: joystick + buttons</div>
+  </div><div class="best" id="howCtl" style="margin-bottom:12px">Move: WASD / arrows · Controller: stick, Ⓐ punch, Ⓑ dash · Touch: joystick + buttons · Emotes: keys 1–4 or the 😀 button</div>
   <button class="go" id="howClose" type="button">Let's brawl!</button></div></div>
 <div class="ov hide" id="setOv" style="z-index:40"><div class="card"><h3>⚙️ Settings</h3><div id="setRows"></div>
   <h3 style="margin-top:16px">🎁 Codes</h3><div class="two"><input class="inp" id="codeIn" placeholder="Enter a code" autocapitalize="characters" autocomplete="off" spellcheck="false"><button class="go" id="codeGo" type="button" style="font-size:15px">Redeem</button></div><div class="best" id="codeMsg" style="margin:6px 0 0"></div>
@@ -108,7 +108,7 @@ if(img.complete&&img.naturalWidth)show();else{img.addEventListener('load',show);
   @keyframes popUp { 0% { opacity: 0; margin-top: 10px; } 15% { opacity: 1; } 100% { opacity: 0; margin-top: -60px; } }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="js/game.js?v=20261124171452"></script>
+<script src="js/game.js?v=20261124192121"></script>
 <script>/* offline + installable app */ try { if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {})); } catch (e) {}</script>
 </body>
 </html>

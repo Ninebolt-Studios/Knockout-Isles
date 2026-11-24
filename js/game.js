@@ -271,12 +271,14 @@ function applyHit(f, o, kind, chg, nx, nz) {
   kb /= o.mass; if (o.shieldT > 0) { kb *= 0.2; dmg = 0; }
   o.dmg = Math.min(999, o.dmg + dmg); o.vx = nx * kb; o.vz = nz * kb; o.vy = Math.max(o.vy, kb * 0.36 + (kind === 'smash' || kind === 'bomb' ? 2.5 : 1)); o.grounded = false; o.y = Math.max(o.y, 0.02);
   o.stun = 0.16 + kb * 0.022; o.atk = null; o.dashT = 0;
-  if (f) { o.lastHit = f.id; o.lastHitT = 4; }
-  ev('h', Math.round(o.x * 10), Math.round((o.y + 0.7) * 10), Math.round(o.z * 10), Math.round(kb), o.id, f ? f.id : -1);
+  if (f) { o.lastHit = f.id; o.lastHitT = 4; o.lastKind = kind; }
+  ev('h', Math.round(o.x * 10), Math.round((o.y + 0.7) * 10), Math.round(o.z * 10), Math.round(kb), o.id, f ? f.id : -1, kind === 'smash' && chg >= 0.99 ? 2 : kind === 'bomb' ? 3 : 1);
 }
 function knockOut(f) {
   f.alive = false; f.falls++; const by = f.lastHitT > 0 ? GM.fighters[f.lastHit] : null; if (by && by !== f) by.kos++; if (GM.mode === 'tut' && f.dummy && by && by.id === GM.me) GM.tutKO = 1;
-  ev('k', f.id, by && by !== f ? by.id : -1, Math.round(f.x * 10), Math.round(f.z * 10));
+  ev('k', f.id, by && by !== f ? by.id : -1, Math.round(f.x * 10), Math.round(f.z * 10), f.lastKind === 'bomb' && by && by !== f ? 1 : 0);
+  if (by && by !== f && by.bot && Math.random() < 0.3) ev('o', by.id, (Math.random() * 4) | 0);
+  if (GM.mode === 'elim' && GM.phase === 'play') { const left = GM.fighters.filter(o => o.alive); if (left.length === 1) { GM.kocam = { id: left[0].id, t: 1.9 }; ev('c', left[0].id); ev('o', left[0].id, 2); } }
   if (GM.mode === 'elim') { f.out = true; f.place = GM.fighters.filter(o => o.alive).length + 1; GM.order.push(f.id); }
   else f.respawnT = 2.2;
   f.atk = null; f.chg = 0; f.item = null; f.hammer = 0; f.megaT = f.bootsT = f.shieldT = 0;
@@ -442,11 +444,11 @@ function standings() {
   if (GM.mode === 'elim') fs.sort((a, b) => (a.place || 99) - (b.place || 99) || b.kos - a.kos); else fs.sort((a, b) => b.kos - a.kos || a.falls - b.falls || a.dmg - b.dmg);
   return fs.map((f, i) => ({ id: f.id, name: f.name, color: f.color, kos: f.kos, falls: f.falls, place: i + 1 }));
 }
-function endMatch() { GM.ended = true; GM.phase = 'end'; const res = standings(), g = GM; GM.res = res; ev('end'); if (NET.role === 'host') netSend({ t: 'end', res }); setTimeout(() => { if (GM === g) showResults(res); }, 1600); }
+function endMatch() { GM.ended = true; GM.phase = 'end'; const res = standings(), g = GM; GM.res = res; ev('end'); if (NET.role === 'host') netSend({ t: 'end', res }); setTimeout(() => { if (GM === g) showResults(res); }, GM.kocam ? 2700 : 1600); }
 function showResults(res) {
   if (!GM || state !== 'play') return; const me = res.find(r => r.id === GM.me), n = res.length, place = me ? me.place : n;
   const win = place === 1, earn = 20 + (win ? 150 : place === 2 ? 80 : place === 3 ? 50 : place <= Math.ceil(n / 2) ? 25 : 0) + (me ? me.kos * 15 : 0);
-  SAVE.coins += earn; SAVE.games++; if (win) SAVE.wins++; SAVE.kos += me ? me.kos : 0; save();
+  SAVE.coins += earn; SAVE.games++; if (win) SAVE.wins++; SAVE.kos += me ? me.kos : 0; SAVE.stats.matches++; if (NET.role !== 'off') SAVE.stats.online++; if (me) SAVE.stats.bestko = Math.max(SAVE.stats.bestko, me.kos); save(); if (win && GM.mode === 'elim' && n >= 20) META.unlock('big'); META.check();
   $('resTitle').textContent = win ? '🏆 You won!' : 'You placed #' + place + ' of ' + n;
   const list = $('resList'); list.textContent = '';
   for (const r of res) { const d = document.createElement('div'); if (r.id === GM.me) d.className = 'me'; d.innerHTML = '<span></span><i></i><span></span><span></span><span></span>'; d.children[0].textContent = r.place + '.'; d.children[1].style.background = hex(r.color); d.children[2].textContent = r.name; d.children[3].textContent = r.kos + ' KO'; d.children[4].textContent = GM.mode === 'frenzy' ? r.falls + ' falls' : ''; list.appendChild(d); }
@@ -481,6 +483,7 @@ function syncVis(dt, time) {
     v.fistR.position.set(0.58 - (a && right ? ph * 0.35 : 0), 0.55, 0.12 + (a && right ? ph * (a.kind === 'smash' ? 0.95 : 0.75) : 0) - (f.chg > 0 ? 0.25 * f.chg : 0));
     v.fistL.position.set(-0.58 + (a && (!right || a.kind === 'smash') ? ph * 0.35 : 0), 0.55, 0.12 + (a && (!right || a.kind === 'smash') ? ph * 0.75 : 0));
     v.fistR.rotation.x = a && right ? -0.3 * ph : 0; v.fistL.rotation.x = a && (!right || a.kind === 'smash') ? -0.3 * ph : 0;
+    emoteAnim(f, v, dt, time);
     v.glow.material.opacity = f.chg > 0 ? 0.4 + f.chg * 0.6 * (0.7 + 0.3 * Math.sin(time * 30)) : 0; v.glow.material.color.setHex(f.chg >= 1 ? 0xff5a5f : 0xffc93c); v.glow.scale.setScalar(f.chg >= 1 ? 3.2 + Math.sin(time * 24) * 0.4 : 2.4);
     v.shield.visible = f.shieldT > 0; v.hammer.visible = f.hammer > 0; v.fistR.visible = !v.hammer.visible; if (v.hammer.visible) v.hammer.rotation.x = a ? -ph * 1.8 : -0.3;
     v.rig.rotation.x = f.stun > 0 && !f.grounded ? Math.sin(time * 20) * 0.4 : f.dashT > 0 ? 0.35 : 0;
@@ -509,9 +512,12 @@ function playEvents() {
 }
 function handleEv(e) {
   const me = GM.fighters[GM.me], k = e[0];
+  if (k === 'h' && e[6] === GM.me && e[7] === 2) META.bump('maxsmash');
   if (k === 'h') { const x = e[1] / 10, y = e[2] / 10, z = e[3] / 10, s = e[4]; burst(sparks, x, y, z, 6 + Math.min(20, s), 6 + s * 0.4, 4 + s * 0.2, 0.35); thump(s); if ((e[5] === GM.me || e[6] === GM.me) && SAVE.set.shake) shake = Math.max(shake, Math.min(0.6, s * 0.03)); if (s >= 12) popTextDom(x, y + 1, z, s >= 18 ? 'SMASH!' : 'POW!', '#ffc93c'); if (e[5] === GM.me) haptic(s > 10 ? 40 : 15); }
-  else if (k === 'k') { const v = GM.fighters[e[1]], by = GM.fighters[e[2]]; const x = e[3] / 10, z = e[4] / 10; burst(splash, x, -6.6, z, 26, 8, 9, 0.9); boom(0.5); feed((by ? by.name + ' 👊 ' : '💦 ') + v.name, v.id === GM.me || (by && by.id === GM.me)); if (by && by.id === GM.me) { toast('KNOCKOUT! +◎15'); tone(990, 0.12, 'square', 0.06); } if (v.id === GM.me) { haptic(80); if (GM.mode === 'elim') { $('big').innerHTML = 'OUT!<small>#' + (GM.fighters.filter(f => f.alive).length + 1) + ' · spectating</small>'; setTimeout(() => { if (GM && $('big').textContent.startsWith('OUT')) $('big').innerHTML = ''; }, 1800); } else toast('RESPAWNING…'); } }
+  else if (k === 'k') { const v = GM.fighters[e[1]], by = GM.fighters[e[2]]; if (by && by.id === GM.me) { GM.myKos = (GM.myKos || 0) + 1; if (e[5]) META.bump('bombko'); } const x = e[3] / 10, z = e[4] / 10; burst(splash, x, -6.6, z, 26, 8, 9, 0.9); boom(0.5); feed((by ? by.name + ' 👊 ' : '💦 ') + v.name, v.id === GM.me || (by && by.id === GM.me)); if (by && by.id === GM.me) { toast('KNOCKOUT! +◎15'); tone(990, 0.12, 'square', 0.06); } if (v.id === GM.me) { haptic(80); if (GM.mode === 'elim') { $('big').innerHTML = 'OUT!<small>#' + (GM.fighters.filter(f => f.alive).length + 1) + ' · spectating</small>'; setTimeout(() => { if (GM && $('big').textContent.startsWith('OUT')) $('big').innerHTML = ''; }, 1800); } else toast('RESPAWNING…'); } }
   else if (k === 'm') { const f = GM.fighters[e[1]]; if (f) burst(sparks, f.x, f.y + 1, f.z, 14, 5, 3, 0.4); if (e[1] === GM.me) { tone(1320, 0.12, 'triangle', 0.1); toast('⚡ MAX POWER: let go to SMASH!'); haptic(25); } }
+  else if (k === 'o') { const f = GM.fighters[e[1]]; if (f) { f.emoK = e[2]; f.emoT = 1.6; popTextDom(f.x, f.y + 2.6, f.z, EMOTES[e[2]][0], '#fff'); if (e[1] === GM.me || Math.random() < 0.4) tone([660, 880, 523, 784][e[2]], 0.12, 'triangle', 0.07); } }
+  else if (k === 'c') { GM.kocam = { id: e[1], t: 1.9 }; $('big').innerHTML = 'K.O.!'; boom(0.7); }
   else if (k === 'w') { whoosh(e[2] === 2 ? 0.16 : 0.08); }
   else if (k === 'd') { const f = GM.fighters[e[1]]; if (f) burst(dust, f.x, 0.3, f.z, 6, 3, 1.5, 0.5); whoosh(0.06); }
   else if (k === 'p') { const f = GM.fighters[e[1]], kind = ITEM_KINDS[e[2]]; if (f) popTextDom(f.x, f.y + 2, f.z, ITEM_ICO[kind], '#fff'); if (e[1] === GM.me) { tone(700, 0.08, 'triangle', 0.12); setTimeout(() => tone(1050, 0.12, 'triangle', 0.12), 70); toast({ bomb: '💣 BOMB! punch to throw', mega: '🍄 MEGA SIZE!', boots: '👟 SPEED BOOTS!', shield: '🛡️ SHIELD!', hammer: '🔨 HAMMER: 3 smashes' }[kind]); } }
@@ -546,7 +552,8 @@ function hud(dt) {
   }
   // name tags
   const showTags = SAVE.set.tags, W = innerWidth, H = innerHeight;
-  for (const f of GM.fighters) { const tg = f.tag; if (!f.alive || !showTags && f.id !== GM.me) { tg.style.display = 'none'; continue; }
+  const kcOn = GM.kocam && GM.kocam.t > 0;
+  for (const f of GM.fighters) { const tg = f.tag; if (!f.alive || kcOn || !showTags && f.id !== GM.me) { tg.style.display = 'none'; continue; }
     tmpV.set(f.x, f.y + (f.megaT > 0 ? 3.6 : 2.3), f.z).project(camera); if (tmpV.z > 1 || Math.abs(tmpV.x) > 1.1 || Math.abs(tmpV.y) > 1.1) { tg.style.display = 'none'; continue; }
     tg.style.display = ''; tg.style.transform = 'translate(' + ((tmpV.x * 0.5 + 0.5) * W | 0) + 'px,' + ((-tmpV.y * 0.5 + 0.5) * H | 0) + 'px) translate(-50%,-100%)';
     const d = Math.round(f.dmg); if (tg._d !== d) { tg._d = d; tg.children[1].textContent = d + '%'; tg.children[1].style.color = dmgColor(d); } }
@@ -560,9 +567,10 @@ function haptic(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catc
 function camera3(dt) {
   const me = GM.fighters[GM.me]; let tg = me;
   if (!me.alive && GM.mode === 'elim') { let s = GM.fighters[GM.spec]; if (!s || !s.alive) { const al = GM.fighters.filter(f => f.alive); s = al.sort((a, b) => b.kos - a.kos)[0]; GM.spec = s ? s.id : -1; } if (s) tg = s; }
-  const z = SAVE.set.cam * (isTouch && innerHeight < 520 ? 1.15 : 1) * (1 + ISLE.R * 0.04), tx = tg.alive || GM.mode === 'elim' ? tg.x * 0.75 : 0, tz = tg.alive || GM.mode === 'elim' ? tg.z * 0.75 : 0;
+  const kc = GM.kocam && GM.kocam.t > 0 && GM.fighters[GM.kocam.id]; if (kc) tg = kc;
+  const z = SAVE.set.cam * (isTouch && innerHeight < 520 ? 1.15 : 1) * (1 + ISLE.R * 0.04) * (kc ? 0.5 : 1), tx = kc ? tg.x : tg.alive || GM.mode === 'elim' ? tg.x * 0.75 : 0, tz = kc ? tg.z : tg.alive || GM.mode === 'elim' ? tg.z * 0.75 : 0;
   const want = tmpV.set(tx, 12.5 * z, tz + 9.6 * z);
-  if (camSnap) { camPos.copy(want); camLook.set(tx, 0, tz); camSnap = false; } else { camPos.lerp(want, Math.min(1, dt * 6)); camLook.lerp(new THREE.Vector3(tx, Math.max(-2, Math.min(0, tg.y * 0.3)), tz), Math.min(1, dt * 5)); }
+  if (camSnap) { camPos.copy(want); camLook.set(tx, 0, tz); camSnap = false; } else { camPos.lerp(want, Math.min(1, dt * 6)); camLook.lerp(new THREE.Vector3(tx, kc ? 0.6 : Math.max(-2, Math.min(0, tg.y * 0.3)), tz), Math.min(1, dt * (kc ? 8 : 5))); }
   shake = Math.max(0, shake - dt * 1.8); camera.position.copy(camPos).add(new THREE.Vector3((Math.random() - .5) * shake, (Math.random() - .5) * shake, (Math.random() - .5) * shake)); camera.lookAt(camLook);
   sun.position.set(camLook.x - 20, 40, camLook.z + 18); sun.target.position.copy(camLook);
 }
@@ -578,7 +586,8 @@ function loop() {
   pollPad();
   if (state === 'play' && GM) {
     readLocalInput();
-    if (NET.role !== 'client') { const steps = GM.speed > 1 ? GM.speed : 1; for (let i = 0; i < steps; i++) hostStep(rdt); }
+    if (NET.role !== 'client') { const steps = GM.speed > 1 ? GM.speed : 1; const slow = GM.kocam && GM.kocam.t > 0 ? 0.3 : 1; for (let i = 0; i < steps; i++) hostStep(rdt * slow); }
+    if (GM.kocam && GM.kocam.t > 0) GM.kocam.t -= rdt;
     playEvents(); syncVis(rdt, time); camera3(rdt); hud(rdt);
     if (NET.role === 'host') netHostTick(rdt); else if (NET.role === 'client') netClientTick(rdt);
   } else if (state === 'paused' && GM) { if (NET.role !== 'off') { readLocalInput(); if (NET.role === 'host') { hostStep(rdt); playEvents(); netHostTick(rdt); } else netClientTick(rdt); syncVis(rdt, time); } }
@@ -670,6 +679,7 @@ async function hostRoom(tries = 0) {
         if (!d || typeof d !== 'object') return;
         if (d.t === 'hi') { if (NET.members.length >= 20) { c.send({ t: 'full' }); setTimeout(() => c.close(), 300); return; } if (state === 'play' || state === 'paused') { c.send({ t: 'busy' }); setTimeout(() => c.close(), 300); return; }
           NET.conns.set(c.peer, c); NET.members = NET.members.filter(m => m.pid !== c.peer); NET.members.push({ pid: c.peer, name: String(d.name || 'Player').slice(0, 14), color: +d.color || COLORS[0], hat: HATS[d.hat] ? d.hat : 'none' }); lobbyBroadcast(); renderLobby(); tone(880, 0.1, 'triangle', 0.08); }
+        else if (d.t === 'emo' && GM) { const f = GM.fighters.find(x => x.pid === c.peer); if (f && f.alive) ev('o', f.id, clamp(d.k | 0, 0, 3)); }
         else if (d.t === 'in' && GM) { const f = GM.fighters.find(x => x.pid === c.peer); if (f && !f.bot) { f.inp.mx = clamp(+d.mx || 0, -1, 1); f.inp.mz = clamp(+d.mz || 0, -1, 1); f.inp.p = !!d.p; f.inp.d = d.d | 0; } }
       });
       c.on('close', () => dropPeer(c.peer)); c.on('error', () => dropPeer(c.peer));
@@ -705,7 +715,7 @@ function clientData(d) {
   else if (d.t === 'busy') { netLeave(); netMsg('That room is in a match right now. Try again in a minute.'); $('lobbyOv').classList.add('hide'); }
   else if (d.t === 'start') { const me = d.roster.findIndex(r => r.pid === NET.myPid); startMatch(d.cfg, d.roster, me < 0 ? 0 : me); for (const f of GM.fighters) { f.tx = f.x; f.tz = f.z; f.ty = f.y; f.tface = f.face; } }
   else if (d.t === 'st' && GM) applySnap(d);
-  else if (d.t === 'end' && GM) { const g = GM; GM.res = d.res; GM.phase = 'end'; handleEv(['end']); setTimeout(() => { if (GM === g) showResults(d.res); }, 1600); }
+  else if (d.t === 'end' && GM) { const g = GM; GM.res = d.res; GM.phase = 'end'; handleEv(['end']); setTimeout(() => { if (GM === g) showResults(d.res); }, GM.kocam ? 2700 : 1600); }
 }
 function startOnline() {
   if (NET.role !== 'host') return; const humans = NET.members.slice(0, 20), n = Math.max(humans.length, Math.min(20, NET.cfg.fill));
@@ -751,6 +761,7 @@ function chips(box, opts, cur, on) { box.textContent = ''; for (const [v, n] of 
 
 /* ---------- menu ---------- */
 function renderMenu() {
+  if (window.__META) window.__META.renderDaily();
   $('mCoins').textContent = '◎ ' + SAVE.coins.toLocaleString(); $('stWins').textContent = SAVE.wins; $('stKos').textContent = SAVE.kos; $('stGames').textContent = SAVE.games;
   $('howCard').classList.toggle('hide', !!SAVE.tutDone);
   const big = (box, list, cur, on) => { box.textContent = ''; for (const [k, n, d] of list) { const b = document.createElement('button'); b.type = 'button'; b.className = 'chip' + (cur === k ? ' on' : ''); b.innerHTML = '<span></span><small></small>'; b.children[0].textContent = n; b.children[1].textContent = d || ''; b.onclick = () => on(k); box.appendChild(b); } };
@@ -759,7 +770,7 @@ function renderMenu() {
   big($('countList'), [4, 8, 12, 16, 20].map(n => [n, n + ' players', n === 20 ? 'max chaos' : n === 4 ? 'small brawl' : '']), SAVE.count, k => { SAVE.count = k; save(); renderMenu(); menuScene(); });
   const cl = $('colList'); cl.textContent = ''; COLORS.forEach((c, i) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'sw' + (SAVE.color === i ? ' on' : ''); b.style.background = hex(c); b.setAttribute('aria-label', 'Colour ' + (i + 1)); b.onclick = () => { SAVE.color = i; save(); renderMenu(); }; cl.appendChild(b); });
   const hl = $('hatList'); hl.textContent = ''; for (const [k, h] of Object.entries(HATS)) { const own = SAVE.hats.includes(k), b = document.createElement('button'); b.type = 'button'; b.className = 'hat' + (SAVE.hat === k ? ' on' : ''); b.innerHTML = '<i></i><span></span><small></small>'; b.children[0].textContent = h.e; b.children[1].textContent = h.n; b.children[2].textContent = own ? (SAVE.hat === k ? 'Wearing' : 'Owned') : '◎ ' + h.p.toLocaleString();
-    b.onclick = () => { if (!own) { if (SAVE.coins < h.p) { b.children[2].textContent = 'Need ◎ ' + (h.p - SAVE.coins).toLocaleString(); return; } SAVE.coins -= h.p; SAVE.hats.push(k); tone(880, 0.15, 'triangle', 0.1); } SAVE.hat = k; save(); renderMenu(); }; hl.appendChild(b); }
+    b.onclick = () => { if (!own) { if (SAVE.coins < h.p) { b.children[2].textContent = 'Need ◎ ' + (h.p - SAVE.coins).toLocaleString(); return; } SAVE.coins -= h.p; SAVE.hats.push(k); setTimeout(() => META.check(), 50); tone(880, 0.15, 'triangle', 0.1); } SAVE.hat = k; save(); renderMenu(); }; hl.appendChild(b); }
   if (document.activeElement !== $('nameIn')) $('nameIn').value = SAVE.name || '';
 }
 $('nameIn').addEventListener('input', () => { SAVE.name = $('nameIn').value.replace(/[<>]/g, '').slice(0, 14); save(); });
@@ -826,8 +837,8 @@ function cloudInit() {
   return CLOUD.ready;
 }
 function acUI() { const u = CLOUD.user; $('acPillTxt').textContent = u ? u.email + ' · saved' : 'Sign in to save your progress'; $('acPill').classList.toggle('on', !!u); $('acOut').classList.toggle('hide', !!u); $('acInBox').classList.toggle('hide', !u); if (u) $('acWho').textContent = 'Signed in as ' + u.email + (SAVE.cloudAt ? ' · saved ' + new Date(SAVE.cloudAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : ''); }
-const PROG = ['coins', 'hats', 'wins', 'kos', 'games'];
-function mergeSave(a, b) { return { coins: Math.max(+a.coins || 0, +b.coins || 0), wins: Math.max(+a.wins || 0, +b.wins || 0), kos: Math.max(+a.kos || 0, +b.kos || 0), games: Math.max(+a.games || 0, +b.games || 0), hats: [...new Set(['none', ...(a.hats || []), ...(b.hats || [])])].filter(k => HATS[k]) }; }
+const PROG = ['coins', 'hats', 'wins', 'kos', 'games', 'ach'];
+function mergeSave(a, b) { return { coins: Math.max(+a.coins || 0, +b.coins || 0), wins: Math.max(+a.wins || 0, +b.wins || 0), kos: Math.max(+a.kos || 0, +b.kos || 0), games: Math.max(+a.games || 0, +b.games || 0), hats: [...new Set(['none', ...(a.hats || []), ...(b.hats || [])])].filter(k => HATS[k]), ach: Object.assign({}, b.ach || {}, a.ach || {}) }; }
 const progKey = o => JSON.stringify(PROG.map(k => o[k]));
 async function cloudSync(startup) {
   if (!CLOUD.user || CLOUD.busy) return; CLOUD.busy = true;
@@ -863,6 +874,114 @@ const errText = e => ERRS[e && e.code] || ('Something went wrong' + (e && e.code
 /* ---------- boot ---------- */
 window.__nbBusy = () => state === 'play' || state === 'paused' || NET.role !== 'off';
 try { if (sessionStorage.getItem('ki-upd')) { sessionStorage.removeItem('ki-upd'); setTimeout(() => { try { ($('netMsg').textContent = '✨ Updated to the newest version!'); } catch (e) {} }, 2600); } } catch (e) {}
+/* ---------- achievements list ---------- */
+const STAT_DEFAULTS = { matches: 0, online: 0, maxsmash: 0, bombko: 0, bestko: 0, emotes: 0, dailies: 0 };
+const ACH = [
+  { id: 'm1', ico: '🏝️', n: 'First brawl', d: 'Play your first match', r: 50, goal: 1, val: () => SAVE.stats.matches },
+  { id: 'w1', ico: '🏆', n: 'Last one standing', d: 'Win a match', r: 100, goal: 1, val: () => SAVE.wins },
+  { id: 'w10', ico: '👑', n: 'Ruler of the isles', d: 'Win 10 matches', r: 400, goal: 10, val: () => SAVE.wins },
+  { id: 'ko5', ico: '💥', n: 'Rampage', d: 'Get 5 knockouts in one match', r: 150, goal: 5, val: () => SAVE.stats.bestko },
+  { id: 'ko100', ico: '👊', n: 'Heavy hitter', d: 'Get 100 knockouts', r: 300, goal: 100, val: () => SAVE.kos },
+  { id: 'max', ico: '⚡', n: 'Full power', d: 'Land a max-power SMASH', r: 75, goal: 1, val: () => SAVE.stats.maxsmash },
+  { id: 'bomb', ico: '💣', n: 'Kaboom', d: 'Knock someone out with a bomb', r: 100, goal: 1, val: () => SAVE.stats.bombko },
+  { id: 'big', ico: '🌋', n: 'Last of twenty', d: 'Win Last Isle Standing with 20 players', r: 300 },
+  { id: 'hats', ico: '🎩', n: 'Fashionista', d: 'Own 4 hats', r: 100, goal: 4, val: () => SAVE.hats.filter(h => h !== 'none').length },
+  { id: 'online', ico: '🌐', n: 'Squad up', d: 'Play an online match with friends', r: 100, goal: 1, val: () => SAVE.stats.online },
+  { id: 'emote', ico: '😂', n: 'Show-off', d: 'Use an emote', r: 25, goal: 1, val: () => SAVE.stats.emotes },
+  { id: 'daily7', ico: '📅', n: 'Regular', d: 'Claim 7 daily rewards', r: 200, goal: 7, val: () => SAVE.stats.dailies },
+];
+/* ---------- daily rewards + achievements (shared Ninebolt design) ---------- */
+const META = (() => {
+  const DAILY = [50, 75, 100, 150, 200, 250, 400];
+  const dayKey = (d = new Date()) => d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+  SAVE.daily = Object.assign({ last: '', streak: 0 }, SAVE.daily || {});
+  SAVE.ach = SAVE.ach || {};
+  SAVE.stats = Object.assign({}, STAT_DEFAULTS, SAVE.stats || {});
+  const css = document.createElement('style');
+  css.textContent = `
+    .achpop { position: fixed; left: 50%; top: calc(max(10px, env(safe-area-inset-top)) + 6px); transform: translate(-50%, -140%); z-index: 9000; display: flex; gap: 12px; align-items: center; padding: 10px 16px 10px 12px; border-radius: 14px; background: rgba(14,15,22,.94); border: 1px solid rgba(255,210,63,.6); box-shadow: 0 12px 40px rgba(0,0,0,.5); transition: transform .45s cubic-bezier(.2,.9,.25,1.2); pointer-events: none; max-width: calc(100vw - 24px); }
+    .achpop.show { transform: translate(-50%, 0); }
+    .achpop i { font-style: normal; font-size: 30px; } .achpop b { display: block; font: 800 11px system-ui; letter-spacing: .18em; color: #ffd23f; } .achpop span { font: 800 15px system-ui; color: #fff; } .achpop small { display: block; color: rgba(255,255,255,.6); font: 600 12px system-ui; }
+    .achlist { display: grid; gap: 6px; margin: 8px 0 12px; max-height: 58vh; overflow-y: auto; }
+    .achrow { display: grid; grid-template-columns: 36px 1fr auto; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 10px; background: rgba(255,255,255,.04); }
+    .achrow i { font-style: normal; font-size: 24px; text-align: center; filter: grayscale(1); opacity: .45; } .achrow.done i { filter: none; opacity: 1; }
+    .achrow b { display: block; font-size: 14px; } .achrow small { color: rgba(255,255,255,.6); font-size: 12px; } .achrow em { font-style: normal; font-weight: 800; font-size: 13px; color: rgba(255,255,255,.5); white-space: nowrap; } .achrow.done em { color: #6aff7a; }
+    .achbar { height: 6px; border-radius: 3px; background: rgba(255,255,255,.1); overflow: hidden; margin-top: 4px; } .achbar u { display: block; height: 100%; background: #ffd23f; }
+    .dailyrow { display: flex; gap: 5px; margin: 8px 0 10px; } .dailyrow div { flex: 1; text-align: center; padding: 6px 2px; border-radius: 8px; background: rgba(255,255,255,.05); font: 800 11px system-ui; color: rgba(255,255,255,.55); }
+    .dailyrow div.got { background: rgba(106,255,122,.14); color: #6aff7a; } .dailyrow div.now { background: rgba(255,210,63,.2); color: #ffd23f; outline: 1px solid #ffd23f; }`;
+  document.head.appendChild(css);
+
+  // achievement popup
+  const pop = document.createElement('div'); pop.className = 'achpop'; pop.innerHTML = '<i></i><div><b>ACHIEVEMENT UNLOCKED</b><span></span><small></small></div>'; document.body.appendChild(pop);
+  const queue = []; let busy = false;
+  function showNext() { if (busy || !queue.length) return; busy = true; const a = queue.shift(); pop.children[0].textContent = a.ico; pop.querySelector('span').textContent = a.n; pop.querySelector('small').textContent = a.d + ' · +◎ ' + a.r;
+    requestAnimationFrame(() => pop.classList.add('show')); try { tone(784, 0.12, 'triangle', 0.12); setTimeout(() => tone(1175, 0.2, 'triangle', 0.12), 110); } catch (e) {}
+    setTimeout(() => { pop.classList.remove('show'); setTimeout(() => { busy = false; showNext(); }, 500); }, 3000); }
+  function unlock(id) { const a = ACH.find(x => x.id === id); if (!a || SAVE.ach[id]) return; SAVE.ach[id] = Date.now(); SAVE.coins += a.r; save(); queue.push(a); showNext(); try { if (state === 'menu') renderMenu(); } catch (e) {} }
+  function check() { for (const a of ACH) if (!SAVE.ach[a.id] && a.goal && a.val() >= a.goal) unlock(a.id); }
+  function bump(stat, n = 1) { SAVE.stats[stat] = (SAVE.stats[stat] || 0) + n; check(); }
+
+  // achievements overlay
+  const ov = document.createElement('div'); ov.className = 'ov hide'; ov.id = 'achOv'; ov.style.zIndex = 45;
+  ov.innerHTML = '<div class="card"><h3>🏆 Achievements</h3><div class="best" id="achSum"></div><div class="achlist" id="achList"></div><button class="go" type="button" id="achClose">Done</button></div>';
+  document.body.appendChild(ov); ov.querySelector('#achClose').onclick = () => ov.classList.add('hide'); ov.addEventListener('click', e => { if (e.target === ov) ov.classList.add('hide'); });
+  function openList() {
+    const list = ov.querySelector('#achList'); list.textContent = ''; let done = 0;
+    for (const a of ACH) { const got = !!SAVE.ach[a.id]; if (got) done++; const row = document.createElement('div'); row.className = 'achrow' + (got ? ' done' : '');
+      const prog = !got && a.goal > 1 ? Math.min(1, a.val() / a.goal) : 0;
+      row.innerHTML = '<i></i><div><b></b><small></small>' + (prog ? '<div class="achbar"><u></u></div>' : '') + '</div><em></em>';
+      row.children[0].textContent = a.ico; row.querySelector('b').textContent = a.n; row.querySelector('small').textContent = a.d + (prog ? ' (' + Math.floor(a.val()) + ' / ' + a.goal + ')' : ''); if (prog) row.querySelector('u').style.width = Math.round(prog * 100) + '%';
+      row.querySelector('em').textContent = got ? '✓ Done' : '◎ ' + a.r; list.appendChild(row); }
+    ov.querySelector('#achSum').textContent = done + ' of ' + ACH.length + ' unlocked · rewards add straight to your coins';
+    ov.classList.remove('hide');
+  }
+
+  // daily reward card (in the menu)
+  const card = document.createElement('div'); card.className = 'card hide'; card.id = 'dailyCard';
+  card.innerHTML = '<h3>🎁 Daily reward</h3><div class="best" id="dailyTxt"></div><div class="dailyrow" id="dailyRow"></div><button class="go" type="button" id="dailyGo">Claim</button>';
+  function dailyState() { const today = dayKey(), y = new Date(); y.setDate(y.getDate() - 1); const cont = SAVE.daily.last === dayKey(y);
+    return { claimed: SAVE.daily.last === today, day: SAVE.daily.last === today ? SAVE.daily.streak : (cont ? SAVE.daily.streak % 7 + 1 : 1) }; }
+  function renderDaily() {
+    const st = dailyState(); card.classList.toggle('hide', st.claimed);
+    if (st.claimed) return; const amt = DAILY[st.day - 1];
+    card.querySelector('#dailyTxt').textContent = 'Day ' + st.day + ' of 7 · come back every day for bigger rewards' + (st.day === 1 && SAVE.daily.streak > 1 ? ' (streak restarted)' : '');
+    card.querySelector('#dailyRow').innerHTML = DAILY.map((c, i) => '<div class="' + (i + 1 < st.day ? 'got' : i + 1 === st.day ? 'now' : '') + '">D' + (i + 1) + '<br>' + c + '</div>').join('');
+    card.querySelector('#dailyGo').textContent = 'Claim ◎ ' + amt;
+  }
+  card.querySelector('#dailyGo').onclick = () => { const st = dailyState(); if (st.claimed) return; SAVE.daily = { last: dayKey(), streak: st.day }; SAVE.coins += DAILY[st.day - 1];
+    bump('dailies'); save(); try { tone(660, 0.1, 'triangle', 0.12); setTimeout(() => tone(990, 0.18, 'triangle', 0.12), 90); } catch (e) {} renderDaily(); try { renderMenu(); } catch (e) {} };
+  return { unlock, bump, check, openList, card, renderDaily, dayKey };
+})();
+
+window.__META = META;
+$('howCard').after(META.card);
+{ const ab = document.createElement('button'); ab.type = 'button'; ab.className = 'go alt'; ab.style.width = 'auto'; ab.textContent = '🏆 Achievements'; ab.onclick = () => META.openList(); $('setBtn').after(ab); }
+META.check();
+
+/* ---------- emotes: 1-4 on a keyboard, the 😀 button on touch ---------- */
+const EMOTES = [['👋', 'wave'], ['😂', 'laugh'], ['💪', 'flex'], ['🕺', 'dance']];
+let emoCd = 0;
+function doEmote(k) {
+  if (!GM || state !== 'play' || GM.phase === 'end' && GM.mode === 'tut') return; const me = GM.fighters[GM.me]; if (!me.alive || performance.now() < emoCd) return; emoCd = performance.now() + 1500;
+  META.bump('emotes');
+  if (NET.role === 'client') { try { NET.host.send({ t: 'emo', k }); } catch (e) {} } else ev('o', me.id, k);
+}
+addEventListener('keydown', e => { if (e.target && e.target.tagName === 'INPUT') return; const n = ['Digit1', 'Digit2', 'Digit3', 'Digit4'].indexOf(e.code); if (n >= 0) doEmote(n); });
+{ const t = $('touch'), btn = document.createElement('div'); btn.className = 'tb'; btn.id = 'tEmo'; btn.innerHTML = '<span><i>😀</i></span>'; t.appendChild(btn);
+  const bar = document.createElement('div'); bar.id = 'emoBar'; bar.className = 'hide'; bar.innerHTML = EMOTES.map((e, i) => '<button type="button" data-k="' + i + '">' + e[0] + '</button>').join(''); t.appendChild(bar);
+  btn.addEventListener('touchstart', e => { e.preventDefault(); bar.classList.toggle('hide'); }, { passive: false }); btn.addEventListener('mousedown', e => { e.preventDefault(); bar.classList.toggle('hide'); });
+  bar.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; doEmote(+b.dataset.k); bar.classList.add('hide'); });
+  const st = document.createElement('style'); st.textContent = '#tEmo { right: calc(max(22px, env(safe-area-inset-right)) + 30px * var(--s, 1)); bottom: calc(150px * var(--s, 1) + env(safe-area-inset-bottom)); width: 58px; height: 58px; } #tEmo i { font-size: 26px; }'
+    + ' #emoBar { position: absolute; pointer-events: auto; right: calc(max(22px, env(safe-area-inset-right)) + 96px * var(--s, 1)); bottom: calc(150px * var(--s, 1) + env(safe-area-inset-bottom)); display: flex; gap: 6px; padding: 6px; border-radius: 16px; background: rgba(10,16,28,.8); border: 1px solid rgba(255,255,255,.15); }'
+    + ' #emoBar button { width: 50px; height: 50px; border-radius: 12px; border: 0; background: rgba(255,255,255,.08); font-size: 28px; } #emoBar.hide { display: none; }';
+  document.head.appendChild(st); }
+function emoteAnim(f, v, dt, time) {
+  if (!(f.emoT > 0)) return; f.emoT -= dt; const k = f.emoK, s = Math.sin(time * 14);
+  if (k === 0) { v.fistR.position.set(0.5, 1.15 + s * 0.08, 0.2); v.fistR.rotation.z = s * 0.4; }
+  else if (k === 1) { v.rig.position.y = Math.abs(Math.sin(time * 22)) * 0.18; v.rig.rotation.x = -0.15 + Math.sin(time * 22) * 0.06; v.mouth.scale.set(1.3, 1.6, 1); v.mouth.rotation.z = Math.PI; }
+  else if (k === 2) { v.fistL.position.set(-0.62, 1.0, 0.05); v.fistR.position.set(0.62, 1.0, 0.05); v.body.scale.set(1.08, 0.96, 1.08); }
+  else if (k === 3) { v.rig.rotation.y = f.face + time * 9; v.rig.position.y = Math.abs(s) * 0.1; v.fistL.position.y = 0.55 + s * 0.3; v.fistR.position.y = 0.55 - s * 0.3; }
+}
 renderMenu(); fitTouch();
 setTimeout(() => { menuScene(); loop(); requestAnimationFrame(() => requestAnimationFrame(() => { try { window.__splashReady && window.__splashReady(); } catch (e) {} })); }, 80);
 window.__ki = { startTutorial, TUT, get GM() { return GM; }, get state() { return state; }, get NET() { return NET; }, SAVE, startMatch, rosterOffline, hostStep: dt => hostStep(dt), botThink, tileAt, get ISLE() { return ISLE; }, K, joinRoom, hostRoom, startOnline };
