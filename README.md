@@ -38,6 +38,7 @@
 ## Updates
 | Version | What's new |
 |---|---|
+| **v2.3** | **Your SMASH charge stays when you get hit.** Jabs, dashes and bumps no longer wipe your charge, and if you let go while you're stunned the full-power smash fires the moment you recover. **Settings fix:** sound, camera and button size options now work properly (they were saving the wrong value) and any broken settings repair themselves. **Runs smoother:** lighter shadows, and the game switches to Fast graphics by itself if your device struggles mid-match |
 | **v2.2** | **Auto-updater** (like Ashfall): when a new version comes out, the game updates itself the next time you're in the menu (never in the middle of a match or online room) and says "✨ Updated to the newest version!" |
 | **v2.1** | **Real JavaScript project:** the game code now lives in `js/game.js` and the styling in `css/style.css` instead of being packed into one HTML page, plus a Python release tool (`tools/release.py`). Same game, it just loads from proper files |
 | **v2** | **Faster!** (about 40% quicker movement, snappier dashes and punches, rounds about 30% shorter), a **2-minute tutorial** with a training dummy (◎ 250 the first time), **hold at max SMASH power** as long as you like, **new character models** (shiny bean bodies with outlines, boxing gloves, sneakers that walk, blinking eyes, angry eyebrows when charging, rosy cheeks, an 'O' mouth when hit), a ☁️ **Sign in** button at the top of the menu, and How to play in the pause menu |

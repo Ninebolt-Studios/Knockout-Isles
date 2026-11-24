@@ -12,6 +12,7 @@ const hex = c => '#' + c.toString(16).padStart(6, '0');
 /* ---------- save ---------- */
 const SAVE = Object.assign({ coins: 0, color: 0, hat: 'none', hats: ['none'], wins: 0, kos: 0, games: 0, name: '', mode: 'elim', isle: 'palm', count: 12, howSeen: false }, JSON.parse(localStorage.getItem('knockout') || '{}'));
 SAVE.set = Object.assign({ vol: 1, cam: 1, tsize: 1, gfx: 'high', tags: true, shake: true }, SAVE.set || {});
+{ const D = { vol: 1, cam: 1, tsize: 1, gfx: 'high', tags: true, shake: true }; for (const k in D) if (typeof SAVE.set[k] !== typeof D[k] || (typeof D[k] === 'number' && !isFinite(SAVE.set[k])) || (k === 'gfx' && !['high', 'fast'].includes(SAVE.set[k]))) SAVE.set[k] = D[k]; }
 const save = () => { try { localStorage.setItem('knockout', JSON.stringify(SAVE)); } catch (e) {} try { cloudSoon(); } catch (e) {} };
 
 /* ---------- content ---------- */
@@ -182,7 +183,7 @@ function makeFighterMesh(color, hat) {
   // sneakers
   const feet = []; for (const s of [-1, 1]) { const f = new THREE.Group(); f.position.set(s * 0.21, 0.08, 0.04); const shoe = new THREE.Mesh(G.shoe, DARK); shoe.scale.set(0.95, 0.62, 1.35); f.add(shoe); const so = new THREE.Mesh(G.sole, SOLE); so.scale.set(1, 1, 1.4); so.position.y = -0.08; f.add(so); rig.add(f); feet.push(f); }
   // boxing gloves
-  const glove = () => { const gg = new THREE.Group(), gl = new THREE.Mesh(G.glove, GLOVE); gl.scale.set(1, 0.95, 1.12); gl.castShadow = true; gg.add(gl); const th = new THREE.Mesh(G.glove, GLOVE); th.scale.setScalar(0.42); th.position.set(0, 0.09, 0.1); gg.add(th); const cu = new THREE.Mesh(G.cuff, CUFF); cu.position.z = -0.17; gg.add(cu); return gg; };
+  const glove = () => { const gg = new THREE.Group(), gl = new THREE.Mesh(G.glove, GLOVE); gl.scale.set(1, 0.95, 1.12); gg.add(gl); const th = new THREE.Mesh(G.glove, GLOVE); th.scale.setScalar(0.42); th.position.set(0, 0.09, 0.1); gg.add(th); const cu = new THREE.Mesh(G.cuff, CUFF); cu.position.z = -0.17; gg.add(cu); return gg; };
   const fistL = glove(), fistR = glove(); fistL.position.set(-0.58, 0.55, 0.12); fistR.position.set(0.58, 0.55, 0.12); rig.add(fistL, fistR);
   const hg = hatMesh(hat); hg.position.y = 1.27; rig.add(hg);
   const shadow = new THREE.Mesh(new THREE.CircleGeometry(0.55, 18), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.28, depthWrite: false })); shadow.rotation.x = -Math.PI / 2; g.add(shadow);
@@ -225,7 +226,8 @@ function stepFighter(f, dt) {
     else if (f.hammer > 0) { f.hammer--; startAtk(f, 'smash', 0.75); f.holdT = -9; }
     else { f.combo = f.comboT > 0 ? f.combo + 1 : 1; f.comboT = 0.6; startAtk(f, f.combo >= 3 ? 'jab3' : 'jab', 0); if (f.combo >= 3) f.combo = 0; f.holdT = 0; } }
   if (inp.p && f.holdT >= 0) { f.holdT += dt; if (f.holdT > 0.22 && !f.atk && canAct) { const was = f.chg; f.chg = Math.min(1, f.chg + dt * 1.5); if (was < 1 && f.chg >= 1) ev('m', f.id); } }
-  if (!inp.p && f.prevP) { if (f.chg > 0.08 && canAct) startAtk(f, 'smash', f.chg); f.chg = 0; f.holdT = inp.p ? -9 : 0; }
+  if (!inp.p && f.prevP) { if (f.chg > 0.08 && !canAct) f.relQ = true; else { if (f.chg > 0.08) startAtk(f, 'smash', f.chg); f.chg = 0; } f.holdT = 0; }
+  if (f.relQ && canAct && !f.atk) { f.relQ = false; if (f.chg > 0.08) startAtk(f, 'smash', f.chg); f.chg = 0; }
   if (!inp.p) f.holdT = 0;
   f.prevP = inp.p;
   // movement
@@ -268,7 +270,7 @@ function applyHit(f, o, kind, chg, nx, nz) {
   if (f && f.megaT > 0) kb *= 1.3; if (f && !f.bot && ADM.power && f.id === GM.me) kb *= 3;
   kb /= o.mass; if (o.shieldT > 0) { kb *= 0.2; dmg = 0; }
   o.dmg = Math.min(999, o.dmg + dmg); o.vx = nx * kb; o.vz = nz * kb; o.vy = Math.max(o.vy, kb * 0.36 + (kind === 'smash' || kind === 'bomb' ? 2.5 : 1)); o.grounded = false; o.y = Math.max(o.y, 0.02);
-  o.stun = 0.16 + kb * 0.022; o.atk = null; o.chg = 0; o.dashT = 0;
+  o.stun = 0.16 + kb * 0.022; o.atk = null; o.dashT = 0;
   if (f) { o.lastHit = f.id; o.lastHitT = 4; }
   ev('h', Math.round(o.x * 10), Math.round((o.y + 0.7) * 10), Math.round(o.z * 10), Math.round(kb), o.id, f ? f.id : -1);
 }
@@ -569,7 +571,7 @@ function menuScene() { if (!ISLE || ISLE.id !== SAVE.isle || ISLE.R !== isleRadi
 function menuCam(dt) { menuT += dt * 0.08; const d = HS * SQ3 * ISLE.R * 1.9; camera.position.set(Math.cos(menuT) * d, d * 0.62, Math.sin(menuT) * d); camera.lookAt(0, -1, 0); ISLE.time += dt; if (ISLE.seaMat.map) ISLE.seaMat.map.offset.x = ISLE.time * 0.004; }
 
 /* ---------- main loop ---------- */
-let last = performance.now();
+let last = performance.now(); const PERF = { avg: 1 / 60, slow: 0 };
 function loop() {
   requestAnimationFrame(loop);
   const now = performance.now(), rdt = Math.min(0.05, (now - last) / 1000); last = now; const time = now / 1000;
@@ -581,6 +583,7 @@ function loop() {
     if (NET.role === 'host') netHostTick(rdt); else if (NET.role === 'client') netClientTick(rdt);
   } else if (state === 'paused' && GM) { if (NET.role !== 'off') { readLocalInput(); if (NET.role === 'host') { hostStep(rdt); playEvents(); netHostTick(rdt); } else netClientTick(rdt); syncVis(rdt, time); } }
   else if (state === 'menu' && ISLE) menuCam(rdt);
+  if (state === 'play' && gfxHi()) { PERF.avg = PERF.avg * 0.95 + rdt * 0.05; if (PERF.avg > 1 / 32) { PERF.slow += rdt; if (PERF.slow > 4) { SAVE.set.gfx = 'fast'; save(); resize(); toast('Graphics lowered for a smoother game'); } } else PERF.slow = 0; }
   renderer.render(scene, camera);
 }
 
@@ -780,7 +783,7 @@ if (isTouch) { $('howPunch').textContent = 'PUNCH button'; $('howDash').textCont
 const SETS = [['Sound', 'vol', [['Off', 0], ['Low', 0.4], ['Med', 0.7], ['Max', 1]]], ['Camera', 'cam', [['Close', 0.8], ['Normal', 1], ['Far', 1.25]]], ['Touch buttons', 'tsize', [['Small', 0.82], ['Normal', 1], ['Big', 1.15]]],
   ['Graphics', 'gfx', [['High', 'high'], ['Fast', 'fast']]], ['Name tags', 'tags', [['On', true], ['Off', false]]], ['Screen shake', 'shake', [['On', true], ['Off', false]]]];
 function renderSettings() { const box = $('setRows'); box.textContent = '';
-  for (const [label, key, opts] of SETS) { const row = document.createElement('div'); row.className = 'setrow'; const b = document.createElement('b'); b.textContent = label; row.appendChild(b); const r = document.createElement('div'); r.className = 'row'; chips(r, opts, SAVE.set[key], v => { SAVE.set[key] = v; save(); applySettings(); renderSettings(); }); row.appendChild(r); box.appendChild(row); }
+  for (const [label, key, opts] of SETS) { const row = document.createElement('div'); row.className = 'setrow'; const b = document.createElement('b'); b.textContent = label; row.appendChild(b); const r = document.createElement('div'); r.className = 'row'; chips(r, opts.map(([n, v]) => [v, n]), SAVE.set[key], v => { SAVE.set[key] = v; save(); applySettings(); renderSettings(); }); row.appendChild(r); box.appendChild(row); }
   renderAdmin(); }
 function applySettings() { if (MGAIN) MGAIN.gain.value = SAVE.set.vol; resize(); fitTouch(); }
 $('acPill').onclick = () => { const c = $('acctCard'); c.scrollIntoView({ behavior: 'smooth', block: 'center' }); c.style.boxShadow = '0 0 0 2px var(--sea)'; setTimeout(() => c.style.boxShadow = '', 1400); if (!CLOUD.user) setTimeout(() => $('acEmail').focus({ preventScroll: true }), 500); };
