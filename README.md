@@ -11,7 +11,7 @@
 | | |
 |---|---|
 | 🏝️ **Goal** | Knock everyone off the island. **Last Isle Standing**: 1 life, last one wins. **KO Frenzy**: 2 minutes, respawns, most knockouts wins |
-| 👊 **Punch** | Tap to jab (3-hit combo). **Hold** to charge a SMASH |
+| 👊 **Punch** | Tap to jab (3-hit combo). **Hold** to charge a SMASH (you can keep holding at max power) |
 | 💨 **Dash** | Shove rivals, dodge, and dash again in mid-air to save yourself |
 | 📈 **Damage %** | The higher your %, the further you fly |
 | 🎁 **Crates** | 💣 bomb · 🍄 mega size · 👟 speed boots · 🛡️ shield · 🔨 hammer (3 smashes) |
@@ -24,10 +24,12 @@
 - 🏝️ 3 islands: **Palm Cove**, **Magma Isle**, **Sky Reef**; the island grows with the number of players
 - 🎩 Locker: 12 colours and 9 hats to unlock with coins
 - ☁️ Accounts: same login as Ashfall and Boltrush, progress from every device is merged, nothing is ever lost
+- 🎓 Tutorial with a training dummy
 - ⚙️ Settings (sound, camera, touch button size, graphics, name tags, screen shake) and 🎁 gift codes
 - 📲 Installs as an app, works offline against bots
 
 ## Updates
 | Version | What's new |
 |---|---|
+| **v2** | **Faster!** (about 40% quicker movement, snappier dashes and punches, rounds about 30% shorter), a **2-minute tutorial** with a training dummy (◎ 250 the first time), **hold at max SMASH power** as long as you like, **new character models** (shiny bean bodies with outlines, boxing gloves, sneakers that walk, blinking eyes, angry eyebrows when charging, rosy cheeks, an 'O' mouth when hit), a ☁️ **Sign in** button at the top of the menu, and How to play in the pause menu |
 | **v1** | First release: Last Isle Standing + KO Frenzy, 3 islands, up to 20 players online or vs bots, crates, hats, accounts, app |
