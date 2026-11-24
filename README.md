@@ -21,7 +21,8 @@
 
 ## Features
 - 👥 **Up to 20 players**: quick play against bots, or host a room and share the 4-letter code (empty spots fill with bots)
-- 🏝️ 3 islands: **Palm Cove**, **Magma Isle**, **Sky Reef**; the island grows with the number of players
+- 🏝️ 4 islands: **Palm Cove**, **Magma Isle**, **Sky Reef**, **Candy Clouds**
+- 🔴🔵 3 modes: Last Isle Standing, KO Frenzy and Team Brawl; the island grows with the number of players
 - 🎩 Locker: 12 colours and 9 hats to unlock with coins
 - ☁️ Accounts: same login as Ashfall and Boltrush, progress from every device is merged, nothing is ever lost
 - 😀 Emotes + 🎬 victory cam
@@ -40,6 +41,7 @@
 ## Updates
 | Version | What's new |
 |---|---|
+| **v4** | **🍭 New island: Candy Clouds** (pastel tiles floating over cotton-candy clouds, with giant lollipops and gumdrops). **🔴🔵 New mode: Team Brawl**, Red vs Blue with no friendly fire: first team to the KO goal wins (the goal scales with the number of players). Your wins and KOs now show on the **🏆 Ninebolt leaderboards** on the website |
 | **v3** | **😀 Emotes:** wave, laugh, flex and dance (keys 1–4 or the 😀 button), seen by everyone online, and bots celebrate their knockouts. **🎬 Victory cam:** the final knockout goes slow-motion and zooms in on the winner's victory pose. **🎁 Daily rewards:** 7-day streak up to ◎ 400. **🏆 12 achievements** with coin rewards (Rampage, Full Power, Kaboom, Last of Twenty and more) and a trophy list with progress bars |
 | **v2.3** | **Your SMASH charge stays when you get hit.** Jabs, dashes and bumps no longer wipe your charge, and if you let go while you're stunned the full-power smash fires the moment you recover. **Settings fix:** sound, camera and button size options now work properly (they were saving the wrong value) and any broken settings repair themselves. **Runs smoother:** lighter shadows, and the game switches to Fast graphics by itself if your device struggles mid-match |
 | **v2.2** | **Auto-updater** (like Ashfall): when a new version comes out, the game updates itself the next time you're in the menu (never in the middle of a match or online room) and says "✨ Updated to the newest version!" |

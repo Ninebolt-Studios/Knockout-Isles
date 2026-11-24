@@ -12,9 +12,9 @@
 <link rel="icon" href="ki-192.png">
 <link rel="apple-touch-icon" href="ki-touch.png">
 <link rel="manifest" href="manifest.webmanifest">
-<script>/* auto-update: when a new version is published, reload into it (never in the middle of a race / match / room) */(function(){var B='20261124192121',want='';function go(){if(!want||(window.__nbBusy&&window.__nbBusy()))return;if(sessionStorage.getItem('ki-rl')===want)return;sessionStorage.setItem('ki-rl',want);sessionStorage.setItem('ki-upd','1');location.replace(location.pathname+'?v='+want+location.hash);}function ck(){try{fetch(location.pathname+'?c='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){var m=t.match(/var B='(\d+)'/);if(m&&m[1]!==B){want=m[1];go();}}).catch(function(){});}catch(e){}}ck();document.addEventListener('visibilitychange',function(){if(!document.hidden)ck();});window.addEventListener('pageshow',function(e){if(e.persisted)ck();});setInterval(ck,600000);window.__nbUpd=go;})();</script>
+<script>/* auto-update: when a new version is published, reload into it (never in the middle of a race / match / room) */(function(){var B='20261124195251',want='';function go(){if(!want||(window.__nbBusy&&window.__nbBusy()))return;if(sessionStorage.getItem('ki-rl')===want)return;sessionStorage.setItem('ki-rl',want);sessionStorage.setItem('ki-upd','1');location.replace(location.pathname+'?v='+want+location.hash);}function ck(){try{fetch(location.pathname+'?c='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){var m=t.match(/var B='(\d+)'/);if(m&&m[1]!==B){want=m[1];go();}}).catch(function(){});}catch(e){}}ck();document.addEventListener('visibilitychange',function(){if(!document.hidden)ck();});window.addEventListener('pageshow',function(e){if(e.persisted)ck();});setInterval(ck,600000);window.__nbUpd=go;})();</script>
 
-<link rel="stylesheet" href="css/style.css?v=20261124192121">
+<link rel="stylesheet" href="css/style.css?v=20261124195251">
 </head>
 <body>
 <canvas id="view"></canvas>
@@ -88,7 +88,7 @@ if(img.complete&&img.naturalWidth)show();else{img.addEventListener('load',show);
 <div class="ov hide" id="pauseOv"><div class="card"><h3>Paused</h3><div class="btns"><button class="go" id="resumeBtn" type="button">▶ RESUME</button><button class="go alt" id="pSetBtn" type="button">⚙️ Settings</button><button class="go alt" id="pHowBtn" type="button">❔ How to play</button><button class="go alt" id="quitBtn" type="button">Quit to menu</button></div></div></div>
 <div class="ov hide" id="howOv"><div class="card"><h3>How to play</h3>
   <div class="how">
-    <div><i>🏝️</i><div><b>Knock everyone off</b><span class="best">Last one standing on the island wins. In KO Frenzy you respawn: most knockouts wins.</span></div></div>
+    <div><i>🏝️</i><div><b>Knock everyone off</b><span class="best">Last one standing on the island wins. In KO Frenzy you respawn: most knockouts wins. In Team Brawl it's Red vs Blue: first team to the KO goal wins.</span></div></div>
     <div><i>👊</i><div><b>Punch · <span id="howPunch">J / Space</span></b><span class="best">Tap to jab. <b>Hold</b> to charge a SMASH. At max power you can keep holding it, then let go to send people flying.</span></div></div>
     <div><i>💨</i><div><b>Dash · <span id="howDash">K / Shift</span></b><span class="best">Shove rivals, dodge hits, and dash again in mid-air to save yourself.</span></div></div>
     <div><i>📈</i><div><b>Damage %</b><span class="best">The higher your %, the further you fly. Watch everyone's number!</span></div></div>
@@ -108,7 +108,7 @@ if(img.complete&&img.naturalWidth)show();else{img.addEventListener('load',show);
   @keyframes popUp { 0% { opacity: 0; margin-top: 10px; } 15% { opacity: 1; } 100% { opacity: 0; margin-top: -60px; } }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="js/game.js?v=20261124192121"></script>
+<script src="js/game.js?v=20261124195251"></script>
 <script>/* offline + installable app */ try { if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {})); } catch (e) {}</script>
 </body>
 </html>
